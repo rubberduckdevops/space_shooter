@@ -30,7 +30,7 @@ async fn main() {
         color: YELLOW
     };
 
-
+    let mut bullets: Vec<Shape> = Vec::new();
 
 
 
@@ -50,11 +50,29 @@ async fn main() {
         if is_key_down(KeyCode::Up) {
             player.y -= player.speed * delta;
         }
+        if is_key_pressed(KeyCode::Space) {
+            bullets.push(Shape { x: player.x, y: player.y, size: 8.0, speed: 500.0, color: RED });
+
+        }
+
+        // Moving the bullets!
+        for bullet in bullets.iter_mut() {
+            bullet.y -= bullet.speed * delta;
+        }
+        bullets.retain(|bullet| bullet.y + bullet.size / 2.0 > 0.0);
+        for bullet in bullets.iter() {
+            bullet.draw();
+        }
+
+        
+        // println!("Number of Bullets {}", bullets.len());
 
         player.x = player.x.clamp(player.size / 2.0, screen_width() - player.size/2.0);
         player.y = player.y.clamp(player.size /2.0, screen_height() - player.size /2.0);
 
         player.draw();
+
+        draw_text(&format!("Bullets: {}", bullets.len()), 10.0, 30.0, 25.0, WHITE);
         next_frame().await;
     }
 }
