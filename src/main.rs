@@ -51,6 +51,9 @@ async fn main() {
         collided: false,
     };
 
+    let player_ship = load_texture("assets/spacecow.png").await.unwrap();
+    player_ship.set_filter(FilterMode::Nearest);
+
     let mut score = 0;
     let mut bullets: Vec<Shape> = Vec::new();
 
@@ -116,6 +119,9 @@ async fn main() {
                     .clamp(player.size / 2.0, screen_height() - player.size / 2.0);
 
                 player.draw();
+                // Draw the space Cow right after the circle
+                // -16 seems to center the cow on the dot pretty well
+                draw_texture(&player_ship, player.x - 16.0, player.y - 16.0, WHITE);
 
                 // Enemies
                 spawn_timer += delta;
