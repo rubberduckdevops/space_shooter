@@ -51,11 +51,14 @@ async fn main() {
         collided: false,
     };
 
+    log::info!("Loading Assets");
     let player_ship = load_texture("assets/spacecow.png").await.unwrap();
     player_ship.set_filter(FilterMode::Nearest);
 
     let enemy_ship = load_texture("assets/ufo.png").await.unwrap();
     enemy_ship.set_filter(FilterMode::Nearest);
+
+    log::info!("Loading Assets Done");
 
     let mut score = 0;
     let mut bullets: Vec<Shape> = Vec::new();
@@ -67,6 +70,7 @@ async fn main() {
 
     let mut game_state = GameState::MainMenu;
 
+    log::info!("Starting Main Loop");
     loop {
         clear_background(DARKPURPLE);
 
@@ -131,6 +135,7 @@ async fn main() {
                 // Enemies
                 spawn_timer += delta;
                 if spawn_timer > spawn_interval {
+                    log::debug!("Spawning Enemy");
                     spawn_timer = 0.0;
 
                     let enemie_size = gen_range(45.0, 75.0);
@@ -149,7 +154,6 @@ async fn main() {
                 for enemy in enemies.iter_mut() {
                     enemy.y += enemy.speed * delta;
                 }
-                // Clean Up Enemies
                 for enemy in enemies.iter() {
                     enemy.draw();
                     let diamater = enemy.size * 2.0;
@@ -169,6 +173,7 @@ async fn main() {
                 for enemy in enemies.iter_mut() {
                     for bullet in bullets.iter_mut() {
                         if enemy.collides_with(bullet) {
+                            log::debug!("Bullet Collision with Enemy");
                             enemy.collided = true;
                             bullet.collided = true;
                             score += enemy.size as u32;
@@ -181,6 +186,7 @@ async fn main() {
                 bullets.retain(|b| !b.collided && b.y + b.size / 2.0 > 0.0);
 
                 if enemies.iter().any(|e| player.collides_with(e)) {
+                    log::info!("Player was hit by enemy, game over");
                     game_state = GameState::GameOver;
                 }
 
