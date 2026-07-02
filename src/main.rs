@@ -55,6 +55,8 @@ async fn main() {
     let player_ship = load_texture("assets/spacecow.png").await.unwrap();
     player_ship.set_filter(FilterMode::Nearest);
 
+    let player_ship_preview = load_texture("assets/spacecow_preview.png").await.unwrap();
+    let milk_rocket = load_texture("assets/milk_bolt.png").await.unwrap();
     let enemy_ship = load_texture("assets/ufo.png").await.unwrap();
     enemy_ship.set_filter(FilterMode::Nearest);
 
@@ -76,8 +78,9 @@ async fn main() {
 
         match game_state {
             GameState::MainMenu => {
-                draw_centered_text("Space Shooter", 200.0, 60, YELLOW);
-                draw_centered_text("Press Any Key To play!", 280.0, 30, WHITE);
+                draw_centered_text("Cow Space Shooter", 200.0, 60, YELLOW);
+                draw_centered_text("Press SPACE To play!", 280.0, 30, WHITE);
+                draw_texture(&player_ship_preview, screen_width() / 2.0 - 120.0, 300.0, WHITE);
                 if is_key_pressed(KeyCode::Space) {
                     game_state = GameState::Playing;
                 }
@@ -107,6 +110,10 @@ async fn main() {
                         color: RED,
                         collided: false,
                     });
+
+                }
+                if is_key_pressed(KeyCode::Escape) {
+                        game_state = GameState::MainMenu;
                 }
 
                 // Moving the bullets!
@@ -115,6 +122,18 @@ async fn main() {
                 }
                 for bullet in bullets.iter() {
                     bullet.draw();
+                    let diamater = bullet.size * 2.0;
+                    let params = DrawTextureParams {
+                        dest_size: Some(vec2(diamater, diamater)),
+                        ..Default::default()
+                    };
+                    draw_texture_ex(
+                        &milk_rocket,
+                        bullet.x - diamater / 2.0,
+                        bullet.y - diamater / 2.0,
+                        WHITE,
+                        params,
+                    );
                 }
 
                 // Lock Player in Frame
