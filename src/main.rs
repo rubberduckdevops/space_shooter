@@ -52,12 +52,12 @@ async fn main() {
     };
 
     log::info!("Loading Assets");
-    let player_ship = load_texture("assets/spacecow.png").await.unwrap();
+    let player_ship = load_texture("assets/eagle.png").await.unwrap();
     player_ship.set_filter(FilterMode::Nearest);
 
-    let player_ship_preview = load_texture("assets/spacecow_preview.png").await.unwrap();
-    let milk_rocket = load_texture("assets/milk_bolt.png").await.unwrap();
-    let enemy_ship = load_texture("assets/ufo.png").await.unwrap();
+    let player_ship_preview = load_texture("assets/eagle_preview.png").await.unwrap();
+    let milk_rocket = load_texture("assets/firework_rocket.png").await.unwrap();
+    let enemy_ship = load_texture("assets/teapot.png").await.unwrap();
     enemy_ship.set_filter(FilterMode::Nearest);
 
     log::info!("Loading Assets Done");
@@ -78,7 +78,7 @@ async fn main() {
 
         match game_state {
             GameState::MainMenu => {
-                draw_centered_text("Cow Space Shooter", 200.0, 60, YELLOW);
+                draw_centered_text("FREEDOM EDITION", 200.0, 60, YELLOW);
                 draw_centered_text("Press SPACE To play!", 280.0, 30, WHITE);
                 draw_texture(
                     &player_ship_preview,
@@ -159,16 +159,17 @@ async fn main() {
                 spawn_timer += delta;
                 if spawn_timer > spawn_interval {
                     log::debug!("Spawning Enemy");
+                    // Todo Create levels?
+
                     spawn_timer = 0.0;
 
                     let enemie_size = gen_range(45.0, 75.0);
-
                     enemies.push(Shape {
                         x: gen_range(enemie_size / 2.0, screen_width() - enemie_size / 2.0), //Variable enemy position
                         y: -enemie_size,
                         size: enemie_size / 2.0,
                         speed: gen_range(80.0, 120.0), // Variable Enemy Speed
-                        color: LIGHTGRAY,              // Color of "shields"??
+                        color: DARKPURPLE,              // Color of "shields"??
                         collided: false,
                     });
                 }
