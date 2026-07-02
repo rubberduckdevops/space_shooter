@@ -1,0 +1,6 @@
+# macroquad's web build relies on symbols (console_log, init_webgl, gl*, ...)
+# that are supplied at runtime by mq_js_bundle.js in the browser. Since Rust
+# 1.82 the wasm linker rejects undefined symbols by default, which breaks the
+# link step. Re-enable the old behavior so those symbols become JS imports.
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "link-arg=--allow-undefined"]
