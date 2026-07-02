@@ -145,7 +145,7 @@ async fn main() {
                         y: -enemie_size,
                         size: enemie_size / 2.0,
                         speed: gen_range(80.0, 120.0), // Variable Enemy Speed
-                        color: LIGHTGRAY, // Color of "shields"?? 
+                        color: LIGHTGRAY,              // Color of "shields"??
                         collided: false,
                     });
                 }
