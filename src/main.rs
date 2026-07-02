@@ -33,7 +33,6 @@ fn draw_centered_text(text: &str, y: f32, font_size: u16, color: Color) {
     draw_text(text, x, y, font_size as f32, color);
 }
 
-
 enum GameState {
     MainMenu,
     Playing,
@@ -42,6 +41,7 @@ enum GameState {
 
 #[macroquad::main("Space Shooter")]
 async fn main() {
+    env_logger::init();
     let mut player = Shape {
         x: screen_width() / 2.0,
         y: screen_height() / 2.0,
@@ -53,6 +53,9 @@ async fn main() {
 
     let player_ship = load_texture("assets/spacecow.png").await.unwrap();
     player_ship.set_filter(FilterMode::Nearest);
+
+    let enemy_ship = load_texture("assets/ufo.png").await.unwrap();
+    enemy_ship.set_filter(FilterMode::Nearest);
 
     let mut score = 0;
     let mut bullets: Vec<Shape> = Vec::new();
@@ -121,6 +124,8 @@ async fn main() {
                 player.draw();
                 // Draw the space Cow right after the circle
                 // -16 seems to center the cow on the dot pretty well
+                // better might be some actual math
+                // similar to how enemy is drawn... but don't break something that works?
                 draw_texture(&player_ship, player.x - 16.0, player.y - 16.0, WHITE);
 
                 // Enemies
@@ -128,14 +133,14 @@ async fn main() {
                 if spawn_timer > spawn_interval {
                     spawn_timer = 0.0;
 
-                    let enemie_size = gen_range(20.0, 45.0);
+                    let enemie_size = gen_range(45.0, 75.0);
 
                     enemies.push(Shape {
                         x: gen_range(enemie_size / 2.0, screen_width() - enemie_size / 2.0), //Variable enemy position
                         y: -enemie_size,
                         size: enemie_size / 2.0,
                         speed: gen_range(80.0, 120.0), // Variable Enemy Speed
-                        color: RED,
+                        color: LIGHTGRAY, // Color of "shields"?? 
                         collided: false,
                     });
                 }
@@ -146,13 +151,24 @@ async fn main() {
                 }
                 // Clean Up Enemies
                 for enemy in enemies.iter() {
-                    enemy.draw()
+                    enemy.draw();
+                    let diamater = enemy.size * 2.0;
+                    let params = DrawTextureParams {
+                        dest_size: Some(vec2(diamater, diamater)),
+                        ..Default::default()
+                    };
+                    draw_texture_ex(
+                        &enemy_ship,
+                        enemy.x - diamater / 2.0,
+                        enemy.y - diamater / 2.0,
+                        WHITE,
+                        params,
+                    );
                 }
 
                 for enemy in enemies.iter_mut() {
                     for bullet in bullets.iter_mut() {
                         if enemy.collides_with(bullet) {
-                            println!("Collison Detected");
                             enemy.collided = true;
                             bullet.collided = true;
                             score += enemy.size as u32;
@@ -206,4 +222,3 @@ async fn main() {
         next_frame().await;
     }
 }
-
