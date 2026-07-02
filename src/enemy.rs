@@ -30,6 +30,7 @@ impl BasicEnemy {
     }
 
     pub fn draw(&self, asset: &Texture2D) {
+        self.shape.draw();
         let params = DrawTextureParams {
             dest_size: Some(vec2(self.shape.size, self.shape.size)),
             ..Default::default()

@@ -32,7 +32,8 @@ impl Player {
                 x: screen_width() / 2.0,
                 y: screen_height() / 2.0,
                 size: PLAYER_SIZE / 2.0,
-                hitbox: vec2(player_asset.width(), player_asset.height()),
+                // Modify the Player hit box and shrink by 20%
+                hitbox: vec2(player_asset.width() * 0.7 , player_asset.height() * 0.7),
                 speed: PLAYER_SPEED,
                 color: YELLOW,
                 collided: false,

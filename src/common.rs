@@ -1,3 +1,5 @@
+use std::env::{self, var};
+
 use macroquad::prelude::*;
 
 #[derive(Debug)]
@@ -9,6 +11,7 @@ pub enum ShapeType {
 
 #[derive(Debug)]
 pub struct Shape {
+    // ToDo: Should just make this a Vec2? 
     pub x: f32,
     pub y: f32,
     pub size: f32,
@@ -30,6 +33,9 @@ impl Shape {
             }
             ShapeType::Custom => {
                 // Do nothing here this is used for asset drawing.
+                if env::var("SHOW_HIT_BOX").is_ok() {
+                    draw_rectangle_lines(self.x, self.y, self.hitbox.x, self.hitbox.y, 2.0, GREEN);
+                }
             }
         }
     }
