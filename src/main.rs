@@ -1,31 +1,11 @@
+pub mod common;
+pub mod enemy;
+pub mod player;
+
+use crate::common::{Explosion, Shape};
+use crate::enemy::BasicEnemy;
+use crate::player::Player;
 use macroquad::prelude::*;
-use macroquad::rand::gen_range;
-
-const PLAYER_SPEED: f32 = 600.0;
-const PLAYER_SIZE: f32 = 16.0;
-
-#[derive(Debug)]
-struct Shape {
-    x: f32,
-    y: f32,
-    size: f32,
-    speed: f32,
-    color: Color,
-    collided: bool,
-}
-
-impl Shape {
-    fn draw(&self) {
-        draw_circle(self.x, self.y, self.size, self.color);
-    }
-
-    fn collides_with(&self, other: &Shape) -> bool {
-        let dx = self.x - other.x;
-        let dy = self.y - other.y;
-        let distance = (dx * dx + dy * dy).sqrt();
-        distance < (self.size / 2.0 + other.size / 2.0) * 1.25
-    }
-}
 
 fn draw_centered_text(text: &str, y: f32, font_size: u16, color: Color) {
     let dims = measure_text(text, None, font_size, 1.0);
@@ -42,31 +22,33 @@ enum GameState {
 #[macroquad::main("Space Shooter")]
 async fn main() {
     env_logger::init();
-    let mut player = Shape {
-        x: screen_width() / 2.0,
-        y: screen_height() / 2.0,
-        size: PLAYER_SIZE / 2.0,
-        speed: PLAYER_SPEED,
-        color: YELLOW,
-        collided: false,
-    };
+
+    log::info!("Initializing Player");
+    let mut player = Player::init().await;
 
     log::info!("Loading Assets");
     let player_ship = load_texture("assets/eagle.png").await.unwrap();
     player_ship.set_filter(FilterMode::Nearest);
 
     let player_ship_preview = load_texture("assets/eagle_preview.png").await.unwrap();
-    let milk_rocket = load_texture("assets/firework_rocket.png").await.unwrap();
+
+    // Due to the spawn rate we load this here an not in the new struct function
     let enemy_ship = load_texture("assets/teapot.png").await.unwrap();
     enemy_ship.set_filter(FilterMode::Nearest);
+    let mut explosion_frames: Vec<Texture2D> = Vec::new();
+    for i in 1..=12 {
+        let path = format!("assets/explosion/expl_04_{:04}.png", i);
+        let tex = load_texture(&path).await.unwrap();
+        tex.set_filter(FilterMode::Nearest);
+        explosion_frames.push(tex);
+    }
 
     log::info!("Loading Assets Done");
 
     let mut score = 0;
     let mut bullets: Vec<Shape> = Vec::new();
-
-    let mut enemies: Vec<Shape> = Vec::new();
-
+    let mut enemies: Vec<BasicEnemy> = Vec::new();
+    let mut explosions: Vec<Explosion> = Vec::new();
     let mut spawn_timer = 0.0;
     let spawn_interval = 0.5;
 
@@ -95,121 +77,73 @@ async fn main() {
 
                 // Player Actions and Movement
                 if is_key_down(KeyCode::Right) {
-                    player.x += player.speed * delta;
+                    player.move_right(delta);
                 }
                 if is_key_down(KeyCode::Left) {
-                    player.x -= player.speed * delta;
+                    player.move_left(delta);
                 }
                 if is_key_down(KeyCode::Down) {
-                    player.y += player.speed * delta;
+                    player.move_down(delta);
                 }
                 if is_key_down(KeyCode::Up) {
-                    player.y -= player.speed * delta;
+                    player.move_up(delta);
                 }
                 if is_key_pressed(KeyCode::Space) {
-                    bullets.push(Shape {
-                        x: player.x,
-                        y: player.y,
-                        size: 16.0 / 2.0,
-                        speed: 500.0,
-                        color: RED,
-                        collided: false,
-                    });
+                    player.fire();
                 }
                 if is_key_pressed(KeyCode::Escape) {
                     game_state = GameState::MainMenu;
                 }
 
-                // Moving the bullets!
-                for bullet in bullets.iter_mut() {
-                    bullet.y -= bullet.speed * delta;
-                }
-                for bullet in bullets.iter() {
-                    bullet.draw();
-                    let diamater = bullet.size * 2.0;
-                    let params = DrawTextureParams {
-                        dest_size: Some(vec2(diamater, diamater)),
-                        ..Default::default()
-                    };
-                    draw_texture_ex(
-                        &milk_rocket,
-                        bullet.x - diamater / 2.0,
-                        bullet.y - diamater / 2.0,
-                        WHITE,
-                        params,
-                    );
-                }
-
-                // Lock Player in Frame
-                player.x = player
-                    .x
-                    .clamp(player.size / 2.0, screen_width() - player.size / 2.0);
-                player.y = player
-                    .y
-                    .clamp(player.size / 2.0, screen_height() - player.size / 2.0);
-
+                player.move_bullets(delta);
+                player.draw_bullets();
                 player.draw();
-                // Draw the space Cow right after the circle
-                // -16 seems to center the cow on the dot pretty well
-                // better might be some actual math
-                // similar to how enemy is drawn... but don't break something that works?
-                draw_texture(&player_ship, player.x - 16.0, player.y - 16.0, WHITE);
 
                 // Enemies
                 spawn_timer += delta;
                 if spawn_timer > spawn_interval {
                     log::debug!("Spawning Enemy");
                     // Todo Create levels?
-
                     spawn_timer = 0.0;
-
-                    let enemie_size = gen_range(45.0, 75.0);
-                    enemies.push(Shape {
-                        x: gen_range(enemie_size / 2.0, screen_width() - enemie_size / 2.0), //Variable enemy position
-                        y: -enemie_size,
-                        size: enemie_size / 2.0,
-                        speed: gen_range(80.0, 120.0), // Variable Enemy Speed
-                        color: DARKPURPLE,              // Color of "shields"??
-                        collided: false,
-                    });
+                    enemies.push(BasicEnemy::new());
                 }
 
                 // Move Enemies
                 for enemy in enemies.iter_mut() {
-                    enemy.y += enemy.speed * delta;
+                    enemy.move_down(delta);
                 }
                 for enemy in enemies.iter() {
-                    enemy.draw();
-                    let diamater = enemy.size * 2.0;
-                    let params = DrawTextureParams {
-                        dest_size: Some(vec2(diamater, diamater)),
-                        ..Default::default()
-                    };
-                    draw_texture_ex(
-                        &enemy_ship,
-                        enemy.x - diamater / 2.0,
-                        enemy.y - diamater / 2.0,
-                        WHITE,
-                        params,
-                    );
+                    enemy.draw(&enemy_ship);
                 }
 
                 for enemy in enemies.iter_mut() {
-                    for bullet in bullets.iter_mut() {
-                        if enemy.collides_with(bullet) {
+                    for bullet in player.bullets.iter_mut() {
+                        if enemy.shape.collides_with(bullet) {
                             log::debug!("Bullet Collision with Enemy");
-                            enemy.collided = true;
+                            let explosion = Explosion::new(enemy.shape.x, enemy.shape.y, 32.0);
+                            explosions.push(explosion);
+                            enemy.shape.collided = true;
                             bullet.collided = true;
-                            score += enemy.size as u32;
+                            score += 1;
                         }
                     }
                 }
 
-                // Clean Up
-                enemies.retain(|e| !e.collided && e.y - e.size / 2.0 < screen_height());
-                bullets.retain(|b| !b.collided && b.y + b.size / 2.0 > 0.0);
+                explosions.iter_mut().for_each(|e| {
+                    e.draw(&explosion_frames);
+                    e.update(delta);
+                });
 
-                if enemies.iter().any(|e| player.collides_with(e)) {
+                // Clean Up
+                explosions.retain(|e| !e.is_done());
+                enemies.retain(|e| {
+                    !e.shape.collided && e.shape.y - e.shape.size / 2.0 < screen_height()
+                });
+                player
+                    .bullets
+                    .retain(|b| !b.collided && b.y + b.size / 2.0 > 0.0);
+
+                if enemies.iter().any(|e| player.shape.collides_with(&e.shape)) {
                     log::info!("Player was hit by enemy, game over");
                     game_state = GameState::GameOver;
                 }
@@ -240,8 +174,8 @@ async fn main() {
                     // reset everything for a fresh run
                     bullets.clear();
                     enemies.clear();
-                    player.x = screen_width() / 2.0;
-                    player.y = screen_height() - 60.0;
+                    player.shape.x = screen_width() / 2.0;
+                    player.shape.y = screen_height() - 60.0;
                     score = 0;
                     spawn_timer = 0.0;
                     game_state = GameState::Playing;
