@@ -80,7 +80,12 @@ async fn main() {
             GameState::MainMenu => {
                 draw_centered_text("Cow Space Shooter", 200.0, 60, YELLOW);
                 draw_centered_text("Press SPACE To play!", 280.0, 30, WHITE);
-                draw_texture(&player_ship_preview, screen_width() / 2.0 - 120.0, 300.0, WHITE);
+                draw_texture(
+                    &player_ship_preview,
+                    screen_width() / 2.0 - 120.0,
+                    300.0,
+                    WHITE,
+                );
                 if is_key_pressed(KeyCode::Space) {
                     game_state = GameState::Playing;
                 }
@@ -110,10 +115,9 @@ async fn main() {
                         color: RED,
                         collided: false,
                     });
-
                 }
                 if is_key_pressed(KeyCode::Escape) {
-                        game_state = GameState::MainMenu;
+                    game_state = GameState::MainMenu;
                 }
 
                 // Moving the bullets!
